@@ -1,53 +1,70 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import {
-  getMe,
-  markWaitingForPair,
-  createInvite
-} from "../lib/store.js";
+import { getMe, updateUser, createInvite } from "../lib/store.js";
 
 export default function Partner() {
   const me = getMe();
   const navigate = useNavigate();
-
   const [email, setEmail] = useState("");
 
-  function solo() {
-    markWaitingForPair();
+  const isFriendly = me.leagueType === "friendly";
+
+  function joinSoloFriendly() {
+    updateUser(me.id, { status: "waiting_for_pair" });
     navigate("/dashboard");
   }
 
-  function invite() {
-    if (!email.trim()) {
-      alert("Enter partner email");
-      return;
-    }
-    createInvite(email.trim());
+  function sendInvite() {
+    if (!email.trim()) return alert("Enter partner email");
+
+    const inv = createInvite({ createdByUserId: me.id, partnerEmail: email.trim() });
+    updateUser(me.id, { status: "waiting_for_partner" });
+
+    alert(`Invite code (share this with your partner): ${inv.code}`);
     navigate("/dashboard");
   }
 
   return (
-    <div style={{ padding: 20, maxWidth: 400 }}>
+    <div style={{ padding: 20, maxWidth: 520 }}>
       <h2>Partner setup</h2>
 
-      {me.mode === "solo" ? (
+      {isFriendly ? (
         <>
-          <p>You’ll be auto-paired with a similar level player.</p>
-          <button onClick={solo} style={button}>
-            Join waiting pool
+          <p style={{ color: "#444" }}>
+            Friendly allows solo signup (we’ll auto-pair you) or you can invite a partner.
+          </p>
+
+          <button style={btn} onClick={joinSoloFriendly}>
+            Join solo (auto-pair me)
+          </button>
+
+          <hr style={{ margin: "14px 0" }} />
+
+          <div style={{ fontWeight: 800, marginBottom: 8 }}>Invite a partner</div>
+          <input
+            style={inp}
+            placeholder="partner@email.com"
+            value={email}
+            onChange={(e) => setEmail(e.target.value)}
+          />
+          <button style={{ ...btn, marginTop: 10 }} onClick={sendInvite}>
+            Create invite
           </button>
         </>
       ) : (
         <>
-          <p>Invite your partner to join your team.</p>
+          <p style={{ color: "#444" }}>
+            Competitive requires a fixed partner.
+          </p>
+
           <input
-            placeholder="Partner email"
+            style={inp}
+            placeholder="partner@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
-            style={input}
           />
-          <button onClick={invite} style={button}>
-            Send invite
+          <button style={{ ...btn, marginTop: 10 }} onClick={sendInvite}>
+            Create invite
           </button>
         </>
       )}
@@ -55,13 +72,5 @@ export default function Partner() {
   );
 }
 
-const input = {
-  width: "100%",
-  padding: 10,
-  marginBottom: 12
-};
-
-const button = {
-  padding: "10px 14px",
-  fontWeight: 700
-};
+const inp = { width: "100%", padding: 10, borderRadius: 10, border: "1px solid #ccc" };
+const btn = { padding: "10px 12px", borderRadius: 10, border: "1px solid #333", fontWeight: 800, background: "white" };
