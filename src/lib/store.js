@@ -1,5 +1,11 @@
 import { nanoid } from "nanoid";
 import emailjs from "@emailjs/browser";
+console.log("ENV CHECK", {
+  SERVICE: import.meta.env.VITE_EMAILJS_SERVICE_ID,
+  TEMPLATE: import.meta.env.VITE_EMAILJS_TEMPLATE_ID,
+  PUBLIC: import.meta.env.VITE_EMAILJS_PUBLIC_KEY,
+  APP: import.meta.env.VITE_APP_URL,
+});
 
 /**
  * LocalStorage-backed mini backend (MVP).
