@@ -6,17 +6,12 @@ export default function Signup() {
   const { leagueType } = useParams();
   const navigate = useNavigate();
 
-  const league =
-    leagueType === "competitive" ? "competitive" : "friendly";
-
+  const league = leagueType === "competitive" ? "competitive" : "friendly";
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
 
   function submit() {
-    if (!name.trim() || !email.trim()) {
-      alert("Please enter name and email");
-      return;
-    }
+    if (!name.trim() || !email.trim()) return alert("Enter name and email");
 
     const user = createUser({
       name: name.trim(),
@@ -29,40 +24,20 @@ export default function Signup() {
   }
 
   return (
-    <div style={{ padding: 20, maxWidth: 400 }}>
-      <h2>Sign up – {league}</h2>
+    <div style={{ padding: 20, maxWidth: 420 }}>
+      <h2>Sign up — {league}</h2>
 
-      <label>Name</label>
-      <input
-        value={name}
-        onChange={(e) => setName(e.target.value)}
-        style={input}
-      />
+      <label style={lbl}>Name</label>
+      <input style={inp} value={name} onChange={(e) => setName(e.target.value)} />
 
-      <label>Email</label>
-      <input
-        value={email}
-        onChange={(e) => setEmail(e.target.value)}
-        style={input}
-      />
+      <label style={lbl}>Email</label>
+      <input style={inp} value={email} onChange={(e) => setEmail(e.target.value)} />
 
-      <button onClick={submit} style={button}>
-        Create account
-      </button>
+      <button style={btn} onClick={submit}>Create account</button>
     </div>
   );
 }
 
-const input = {
-  width: "100%",
-  padding: 10,
-  marginBottom: 12,
-  borderRadius: 6,
-  border: "1px solid #ccc"
-};
-
-const button = {
-  padding: "10px 14px",
-  fontWeight: 700,
-  cursor: "pointer"
-};
+const lbl = { display: "block", marginTop: 10, marginBottom: 6, fontWeight: 700 };
+const inp = { width: "100%", padding: 10, borderRadius: 10, border: "1px solid #ccc" };
+const btn = { marginTop: 14, padding: "10px 12px", borderRadius: 10, border: "1px solid #333", fontWeight: 800, background: "white" };
