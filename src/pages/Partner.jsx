@@ -1,9 +1,6 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
-import emailjs from "@emailjs/browser";
 import { getMe, updateUser, createInvite, sendInviteEmail } from "../lib/store.js";
-
-
 
 export default function Partner() {
   const me = getMe();
@@ -24,17 +21,7 @@ export default function Partner() {
     const toEmail = email.trim();
     if (!toEmail) return alert("Enter partner email");
 
-    const SERVICE_ID = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-    const TEMPLATE_ID = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-    const PUBLIC_KEY = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-    const APP_URL = import.meta.env.VITE_APP_URL;
-
-    // Quick sanity check (common reason for “no email”)
-    if (!SERVICE_ID || !TEMPLATE_ID || !PUBLIC_KEY || !APP_URL) {
-      console.log("ENV:", { SERVICE_ID, TEMPLATE_ID, PUBLIC_KEY, APP_URL });
-      return alert("Missing .env values. Stop server and run npm run dev again.");
-    }
-
+    // Create invite in local storage first (so you always have the code)
     const inv = createInvite({
       createdByUserId: me.id,
       partnerEmail: toEmail,
@@ -43,32 +30,26 @@ export default function Partner() {
     setSending(true);
 
     try {
-      // These names must match your EmailJS template variables:
-      // {{invite_code}} and {{app_url}}
-      await emailjs.send(
-        SERVICE_ID,
-        TEMPLATE_ID,
-        {
-          invite_code: inv.code,
-          app_url: APP_URL,
-          to_email: toEmail, // optional (some templates use it)
-        },
-        {
-          publicKey: PUBLIC_KEY,
-        }
-      );
+      // This calls EmailJS inside store.js using your .env vars
+      await sendInviteEmail({
+        to_email: toEmail,
+        invite_code: inv.code,
+      });
 
       updateUser(me.id, { status: "waiting_for_partner" });
 
-      alert(`Invite sent to ${toEmail}\nInvite code: ${inv.code}`);
+      alert(`Invite email sent to ${toEmail} ✅\nInvite code: ${inv.code}`);
       navigate("/dashboard");
     } catch (err) {
-      console.error("EmailJS error:", err);
+      console.error("EmailJS failed:", err);
 
-      // Still show the code so you can continue even if email fails
+      // Still let you continue by sharing the code manually
+      updateUser(me.id, { status: "waiting_for_partner" });
+
       alert(
-        `Email failed to send.\nInvite code: ${inv.code}\n\nOpen F12 → Console and send me the error.`
+        `Email failed ❌\nShare this code manually: ${inv.code}\n\nOpen F12 → Console and copy the red error.`
       );
+      navigate("/dashboard");
     } finally {
       setSending(false);
     }
@@ -97,6 +78,7 @@ export default function Partner() {
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+
           <button
             style={{ ...btn, marginTop: 10, opacity: sending ? 0.7 : 1 }}
             onClick={sendInvite}
@@ -108,12 +90,14 @@ export default function Partner() {
       ) : (
         <>
           <p style={{ color: "#444" }}>Competitive requires a fixed partner.</p>
+
           <input
             style={inp}
             placeholder="partner@email.com"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
           />
+
           <button
             style={{ ...btn, marginTop: 10, opacity: sending ? 0.7 : 1 }}
             onClick={sendInvite}
@@ -133,6 +117,7 @@ const inp = {
   borderRadius: 10,
   border: "1px solid #ccc",
 };
+
 const btn = {
   padding: "10px 12px",
   borderRadius: 10,
@@ -140,4 +125,5 @@ const btn = {
   fontWeight: 800,
   background: "white",
 };
+
 
