@@ -31,27 +31,15 @@ export default function Match() {
   const teamNames = (pair) =>
     pair.userIds.map((uid) => s.users.find((u) => u.id === uid)?.name).join(" & ");
 
-  const [dateTime, setDateTime] = useState(
-    m.scheduledAtISO ? m.scheduledAtISO.slice(0, 16) : ""
-  );
+  const [dateTime, setDateTime] = useState(m.scheduledAtISO ? m.scheduledAtISO.slice(0, 16) : "");
   const [courtNote, setCourtNote] = useState(m.courtNote || "");
   const [setsRaw, setSetsRaw] = useState(m.score?.sets?.join(", ") || "6-4, 6-3");
   const [disputeSetsRaw, setDisputeSetsRaw] = useState("6-4, 4-6, 10-8");
 
   function parseSets(raw) {
-    const sets = raw
-      .split(",")
-      .map((x) => x.trim())
-      .filter(Boolean);
-
-    if (sets.length < 2 || sets.length > 3) {
-      throw new Error("Enter 2–3 sets, like: 6-4, 6-3");
-    }
-    for (const st of sets) {
-      if (!/^\d{1,2}-\d{1,2}$/.test(st)) {
-        throw new Error("Each set must look like 6-4");
-      }
-    }
+    const sets = raw.split(",").map((x) => x.trim()).filter(Boolean);
+    if (sets.length < 2 || sets.length > 3) throw new Error("Enter 2–3 sets, like: 6-4, 6-3");
+    for (const st of sets) if (!/^\d{1,2}-\d{1,2}$/.test(st)) throw new Error("Each set must look like 6-4");
     return sets;
   }
 
@@ -61,15 +49,9 @@ export default function Match() {
 
       <div style={card}>
         <h2 style={{ marginTop: 0 }}>Match</h2>
-        <div>
-          Week: <b>{m.weekStartISO}</b> → <b>{m.weekEndISO}</b>
-        </div>
-        <div>
-          Venue: <b>{s.facility.name}, {s.facility.town}</b>
-        </div>
-        <div>
-          Status: <b>{m.status}</b>
-        </div>
+        <div>Week: <b>{m.weekStartISO}</b> → <b>{m.weekEndISO}</b></div>
+        <div>Venue: <b>{s.facility.name}, {s.facility.town}</b></div>
+        <div>Status: <b>{m.status}</b></div>
       </div>
 
       <div style={card}>
@@ -80,25 +62,13 @@ export default function Match() {
 
       <div style={card}>
         <h3 style={{ marginTop: 0 }}>Court booking (external)</h3>
-        <p style={{ marginTop: 0, color: "#444" }}>
-          One captain books directly with the venue. Record it here.
-        </p>
+        <p style={{ marginTop: 0, color: "#444" }}>One captain books the court externally. Record it here.</p>
 
         <label style={lbl}>Booked date/time</label>
-        <input
-          style={inp}
-          type="datetime-local"
-          value={dateTime}
-          onChange={(e) => setDateTime(e.target.value)}
-        />
+        <input style={inp} type="datetime-local" value={dateTime} onChange={(e) => setDateTime(e.target.value)} />
 
         <label style={lbl}>Court note (optional)</label>
-        <input
-          style={inp}
-          value={courtNote}
-          onChange={(e) => setCourtNote(e.target.value)}
-          placeholder="Court 2, bring balls, etc."
-        />
+        <input style={inp} value={courtNote} onChange={(e) => setCourtNote(e.target.value)} placeholder="Court 2, bring balls, etc." />
 
         <button
           style={btn}
@@ -121,9 +91,7 @@ export default function Match() {
 
         {!m.score ? (
           <>
-            <p style={{ marginTop: 0, color: "#444" }}>
-              Captain submits score after match. Format: <b>6-4, 6-3</b>
-            </p>
+            <p style={{ marginTop: 0, color: "#444" }}>Captain submits score. Format: <b>6-4, 6-3</b></p>
 
             <label style={lbl}>Sets</label>
             <input style={inp} value={setsRaw} onChange={(e) => setSetsRaw(e.target.value)} />
@@ -145,20 +113,11 @@ export default function Match() {
               Submit score (captain)
             </button>
 
-            {!myCaptain && (
-              <div style={{ color: "#777", marginTop: 8 }}>
-                You’re not the captain for your pair.
-              </div>
-            )}
+            {!myCaptain && <div style={{ color: "#777", marginTop: 8 }}>You’re not the captain for your pair.</div>}
           </>
         ) : (
           <>
-            <div>
-              Submitted sets: <b>{m.score.sets.join(", ")}</b>
-            </div>
-            <div style={{ color: "#555" }}>
-              Submitted: {new Date(m.score.submittedAtISO).toLocaleString()}
-            </div>
+            <div>Submitted sets: <b>{m.score.sets.join(", ")}</b></div>
 
             {m.status === "pending_confirm" && (
               <>
@@ -175,11 +134,7 @@ export default function Match() {
 
                 <div style={{ marginTop: 12 }}>
                   <div style={{ fontWeight: 800, marginBottom: 6 }}>Dispute score (enter your version)</div>
-                  <input
-                    style={inp}
-                    value={disputeSetsRaw}
-                    onChange={(e) => setDisputeSetsRaw(e.target.value)}
-                  />
+                  <input style={inp} value={disputeSetsRaw} onChange={(e) => setDisputeSetsRaw(e.target.value)} />
                   <button
                     style={btn}
                     onClick={() => {
@@ -202,12 +157,7 @@ export default function Match() {
               <>
                 <hr style={{ margin: "12px 0" }} />
                 <div style={{ color: "#b00", fontWeight: 900 }}>DISPUTED</div>
-                <div>
-                  Proposed score: <b>{m.dispute?.proposedScore?.sets?.join(", ")}</b>
-                </div>
-                <p style={{ color: "#444" }}>
-                  If not resolved, set as <b>No Result</b>.
-                </p>
+                <div>Proposed score: <b>{m.dispute?.proposedScore?.sets?.join(", ")}</b></div>
                 <button
                   style={btn}
                   onClick={() => {
@@ -220,17 +170,8 @@ export default function Match() {
               </>
             )}
 
-            {m.status === "confirmed" && (
-              <div style={{ marginTop: 12, color: "#090", fontWeight: 900 }}>
-                Confirmed ✅
-              </div>
-            )}
-
-            {m.status === "no_result" && (
-              <div style={{ marginTop: 12, color: "#b00", fontWeight: 900 }}>
-                No Result
-              </div>
-            )}
+            {m.status === "confirmed" && <div style={{ marginTop: 12, color: "#090", fontWeight: 900 }}>Confirmed ✅</div>}
+            {m.status === "no_result" && <div style={{ marginTop: 12, color: "#b00", fontWeight: 900 }}>No Result</div>}
           </>
         )}
       </div>
