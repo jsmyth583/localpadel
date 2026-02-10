@@ -382,5 +382,20 @@ export function resolveDisputeAsNoResult({ matchId }) {
   save(s);
   return m;
 }
+import emailjs from "@emailjs/browser";
+
+export async function sendInviteEmail({ to_email, invite_code }) {
+  const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
+  const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
+  const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
+  const appUrl = import.meta.env.VITE_APP_URL;
+
+  return emailjs.send(
+    serviceId,
+    templateId,
+    { to_email, invite_code, app_url: appUrl },
+    { publicKey }
+  );
+}
 
 
