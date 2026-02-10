@@ -4,6 +4,7 @@ import emailjs from "@emailjs/browser";
 import { getMe, updateUser, createInvite, sendInviteEmail } from "../lib/store.js";
 
 
+
 export default function Partner() {
   const me = getMe();
   const navigate = useNavigate();
@@ -139,3 +140,4 @@ const btn = {
   fontWeight: 800,
   background: "white",
 };
+
