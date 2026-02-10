@@ -10,10 +10,10 @@
     "deploy": "npm run build && npx gh-pages -d dist"
   },
   "dependencies": {
+    "nanoid": "^5.0.7",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
-    "react-router-dom": "^6.26.2",
-    "nanoid": "^5.0.7"
+    "react-router-dom": "^6.26.2"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.3.1",
@@ -21,4 +21,5 @@
     "vite": "^5.4.2"
   }
 }
+
 
