@@ -1,7 +1,8 @@
 import React, { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import emailjs from "@emailjs/browser";
-import { getMe, updateUser, createInvite } from "../lib/store.js";
+import { getMe, updateUser, createInvite, sendInviteEmail } from "../lib/store.js";
+
 
 export default function Partner() {
   const me = getMe();
