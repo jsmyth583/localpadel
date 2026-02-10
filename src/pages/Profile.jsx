@@ -10,6 +10,8 @@ export default function Profile() {
   const [level, setLevel] = useState(me?.level ?? 5);
   const [availability, setAvailability] = useState(me?.availability ?? "both");
 
+  if (!me) return <div style={{ padding: 20 }}>No session. Go Home.</div>;
+
   function submit() {
     const lv = Math.max(1, Math.min(10, Number(level)));
 
@@ -47,13 +49,11 @@ export default function Profile() {
         <option value="both">Both</option>
       </select>
 
-      <button style={btn} onClick={submit}>
-        Continue
-      </button>
+      <button style={btn} onClick={submit}>Continue</button>
     </div>
   );
 }
 
 const lbl = { display: "block", marginTop: 10, marginBottom: 6, fontWeight: 700 };
 const inp = { width: "100%", padding: 10, borderRadius: 10, border: "1px solid #ccc" };
-const btn = { marginTop: 14, padding: "10px 12px", borderRadius: 10, border: "1px solid #333", fontWeight: 800 };
+const btn = { marginTop: 14, padding: "10px 12px", borderRadius: 10, border: "1px solid #333", fontWeight: 800, background: "white" };
