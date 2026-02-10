@@ -18,7 +18,15 @@ export default function Partner() {
   }
 
   async function sendInvite() {
-    console.log("SEND INVITE CLICKED", email);
+    console.log("SENDING EMAIL WITH:", {
+  SERVICE_ID,
+  TEMPLATE_ID,
+  PUBLIC_KEY,
+  APP_URL,
+  toEmail,
+  code: inv.code
+});
+
 
     const toEmail = email.trim();
     if (!toEmail) return alert("Enter partner email");
