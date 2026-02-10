@@ -1,6 +1,5 @@
-import emailjs from "@emailjs/browser";
-
 import { nanoid } from "nanoid";
+import emailjs from "@emailjs/browser";
 
 /**
  * LocalStorage-backed mini backend (MVP).
@@ -15,12 +14,6 @@ function mondayOfThisWeekISO() {
   d.setDate(d.getDate() + diff);
   d.setHours(0, 0, 0, 0);
   return d.toISOString();
-}
-
-function isoDateOnly(d) {
-  const x = new Date(d);
-  x.setHours(0, 0, 0, 0);
-  return x.toISOString();
 }
 
 function weekRange(seasonStartISO, weekIndex) {
@@ -46,7 +39,7 @@ export function load() {
     pairs: [],
     invites: [],
     matches: [],
-    session: { userId: null }
+    session: { userId: null },
   };
 
   localStorage.setItem(KEY, JSON.stringify(initial));
@@ -86,7 +79,6 @@ export function createUser({ name, email, leagueType }) {
   const s = load();
   const existing = s.users.find((u) => u.email.toLowerCase() === email.toLowerCase());
   if (existing) {
-    // allow "login" by reusing the user
     existing.leagueType = leagueType || existing.leagueType;
     save(s);
     return existing;
@@ -100,8 +92,8 @@ export function createUser({ name, email, leagueType }) {
     level: 5,
     rating: 500,
     availability: "both",
-    status: "new", // "new"|"needs_partner"|"waiting_for_pair"|"waiting_for_partner"|"paired"
-    pairId: null
+    status: "new", // "new"|"waiting_for_pair"|"waiting_for_partner"|"paired"
+    pairId: null,
   };
 
   s.users.push(user);
@@ -134,7 +126,7 @@ export function createInvite({ createdByUserId, partnerEmail }) {
     leagueType: inviter.leagueType,
     facilityId: s.facility.id,
     acceptedByUserId: null,
-    createdAtISO: new Date().toISOString()
+    createdAtISO: new Date().toISOString(),
   };
 
   s.invites.push(inv);
@@ -155,18 +147,16 @@ export function acceptInvite({ code, accepterUserId }) {
   }
   if (inv.acceptedByUserId) throw new Error("Invite already accepted.");
 
-  // Create pair: inviter + accepter
   const pair = {
     id: "pair_" + nanoid(8),
     userIds: [inv.createdByUserId, accepterUserId],
     captainUserId: inv.createdByUserId,
     leagueType: inv.leagueType,
-    createdAtISO: new Date().toISOString()
+    createdAtISO: new Date().toISOString(),
   };
 
   s.pairs.push(pair);
 
-  // Update both users
   const inviter = s.users.find((u) => u.id === inv.createdByUserId);
   inviter.pairId = pair.id;
   inviter.status = "paired";
@@ -183,7 +173,6 @@ export function acceptInvite({ code, accepterUserId }) {
 
 /**
  * Friendly solo auto-pairing: pairs up users in waiting pool by closest rating.
- * Uses simplest matching: sort by rating and pair adjacent.
  */
 export function tryAutoPairFriendly() {
   const s = load();
@@ -205,7 +194,7 @@ export function tryAutoPairFriendly() {
       userIds: [a.id, b.id],
       captainUserId: a.id,
       leagueType: "friendly",
-      createdAtISO: new Date().toISOString()
+      createdAtISO: new Date().toISOString(),
     };
 
     s.pairs.push(pair);
@@ -224,13 +213,11 @@ export function tryAutoPairFriendly() {
 
 /**
  * Fixtures: for a given weekIndex, pair up pairs within each league type.
- * Very basic: shuffle pairs then match adjacent.
  */
 export function generateWeeklyFixtures({ weekIndex }) {
   const s = load();
   const { weekStartISO, weekEndISO } = weekRange(s.season.starts, weekIndex);
 
-  // avoid duplicating fixtures for same week (idempotent-ish)
   const existingWeek = s.matches.some((m) => m.weekIndex === weekIndex);
   if (existingWeek) return [];
 
@@ -253,7 +240,6 @@ export function generateWeeklyFixtures({ weekIndex }) {
       const pB = pairs[i + 1];
 
       if (!pB) {
-        // bye
         made.push(
           s.matches.push({
             id: "m_" + nanoid(10),
@@ -270,7 +256,7 @@ export function generateWeeklyFixtures({ weekIndex }) {
             scheduledByUserId: null,
             courtNote: "",
             score: null,
-            dispute: null
+            dispute: null,
           })
         );
         continue;
@@ -287,12 +273,12 @@ export function generateWeeklyFixtures({ weekIndex }) {
           isBye: false,
           pairAId: pA.id,
           pairBId: pB.id,
-          status: "not_scheduled", // "not_scheduled"|"scheduled"|"pending_confirm"|"confirmed"|"disputed"|"no_result"
+          status: "not_scheduled",
           scheduledAtISO: null,
           scheduledByUserId: null,
           courtNote: "",
           score: null,
-          dispute: null
+          dispute: null,
         })
       );
     }
@@ -327,7 +313,6 @@ export function submitScore({ matchId, userId, sets }) {
   if (!myPair) throw new Error("You are not in a pair");
   if (myPair.captainUserId !== userId) throw new Error("Only the captain can submit the score.");
 
-  // must be one of the match pairs
   if (m.pairAId !== myPair.id && m.pairBId !== myPair.id) {
     throw new Error("You are not in this match");
   }
@@ -335,7 +320,7 @@ export function submitScore({ matchId, userId, sets }) {
   m.score = {
     sets,
     submittedByUserId: userId,
-    submittedAtISO: new Date().toISOString()
+    submittedAtISO: new Date().toISOString(),
   };
   m.status = "pending_confirm";
   m.dispute = null;
@@ -369,7 +354,7 @@ export function disputeScore({ matchId, userId, sets }) {
   m.dispute = {
     proposedScore: { sets },
     disputedByUserId: userId,
-    disputedAtISO: new Date().toISOString()
+    disputedAtISO: new Date().toISOString(),
   };
   m.status = "disputed";
   save(s);
@@ -384,35 +369,25 @@ export function resolveDisputeAsNoResult({ matchId }) {
   save(s);
   return m;
 }
-import emailjs from "@emailjs/browser";
 
+/**
+ * EmailJS: send invite email
+ * Template variables expected: to_email, invite_code, app_url
+ */
 export async function sendInviteEmail({ to_email, invite_code }) {
   const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
   const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
   const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
   const appUrl = import.meta.env.VITE_APP_URL;
+
+  if (!serviceId || !templateId || !publicKey) {
+    throw new Error("Missing EmailJS env vars. Check .env values and restart dev server.");
+  }
 
   return emailjs.send(
     serviceId,
     templateId,
     { to_email, invite_code, app_url: appUrl },
-    { publicKey }
-  );
-}
-export async function sendInviteEmail({ to_email, invite_code }) {
-  const serviceId = import.meta.env.VITE_EMAILJS_SERVICE_ID;
-  const templateId = import.meta.env.VITE_EMAILJS_TEMPLATE_ID;
-  const publicKey = import.meta.env.VITE_EMAILJS_PUBLIC_KEY;
-  const appUrl = import.meta.env.VITE_APP_URL;
-
-  return emailjs.send(
-    serviceId,
-    templateId,
-    {
-      to_email,
-      invite_code,
-      app_url: appUrl,
-    },
     { publicKey }
   );
 }
