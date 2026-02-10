@@ -18,7 +18,7 @@ export default function Dashboard() {
     return (
       <div style={{ padding: 20 }}>
         <h2>Dashboard</h2>
-        <p>No active user session. Go back to Home and sign up.</p>
+        <p>No active user session.</p>
         <Link to="/">Go Home</Link>
       </div>
     );
@@ -27,7 +27,7 @@ export default function Dashboard() {
   const myPair = me.pairId ? s.pairs.find((p) => p.id === me.pairId) : null;
 
   const myInvites = s.invites.filter(
-    (i) => i.partnerEmail === me.email && !i.acceptedByUserId
+    (i) => i.partnerEmail.toLowerCase() === me.email.toLowerCase() && !i.acceptedByUserId
   );
 
   const myMatches = myPair
@@ -68,7 +68,7 @@ export default function Dashboard() {
         <div style={card}>
           <h3 style={{ marginTop: 0 }}>Waiting pool</h3>
           <p style={{ color: "#444" }}>
-            You’re in the Friendly solo pool. Click to run auto-pairing (simulates the nightly job).
+            You’re in the Friendly solo pool. Click to run auto-pairing.
           </p>
           <button
             onClick={() => {
@@ -86,9 +86,7 @@ export default function Dashboard() {
           <h3 style={{ marginTop: 0 }}>Invites for you</h3>
           {myInvites.map((i) => (
             <div key={i.code} style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 8 }}>
-              <div>
-                Invite code: <b>{i.code}</b>
-              </div>
+              <div>Invite code: <b>{i.code}</b></div>
               <button
                 onClick={() => {
                   try {
