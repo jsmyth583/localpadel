@@ -1,110 +1,155 @@
-import React, { useEffect, useState } from "react";
+import React, { useMemo, useState } from "react";
 import { Link } from "react-router-dom";
 import {
   load,
   getMe,
   tryAutoPairFriendly,
   acceptInvite,
-  generateWeeklyFixtures
+  generateWeeklyFixtures,
+  signOut
 } from "../lib/store.js";
 
 export default function Dashboard() {
-  const [s, setS] = useState(load());
-  const me = getMe();
-
-  useEffect(() => {
-    setS(load());
-  }, []);
+  const [refresh, setRefresh] = useState(0);
+  const s = useMemo(() => load(), [refresh]);
+  const me = useMemo(() => getMe(), [refresh]);
 
   if (!me) {
-    return <p>No active user</p>;
+    return (
+      <div style={{ padding: 20 }}>
+        <h2>Dashboard</h2>
+        <p>No active user session. Go back to Home and sign up.</p>
+        <Link to="/">Go Home</Link>
+      </div>
+    );
   }
+
+  const myPair = me.pairId ? s.pairs.find((p) => p.id === me.pairId) : null;
 
   const myInvites = s.invites.filter(
-    (i) => i.partnerEmail === me.email && !i.accepted
+    (i) => i.partnerEmail === me.email && !i.acceptedByUserId
   );
 
-  function runPairing() {
-    tryAutoPairFriendly();
-    setS(load());
-  }
+  const myMatches = myPair
+    ? s.matches
+        .filter((m) => m.pairAId === myPair.id || m.pairBId === myPair.id)
+        .sort((a, b) => b.weekIndex - a.weekIndex)
+    : [];
 
-  function accept(code) {
-    acceptInvite(code);
-    setS(load());
+  function currentWeekIndex(seasonStartISO) {
+    const start = new Date(seasonStartISO);
+    const now = new Date();
+    const diffDays = Math.floor((now - start) / (24 * 3600 * 1000));
+    return Math.max(0, Math.floor(diffDays / 7));
   }
-
-  function genFixtures() {
-    generateWeeklyFixtures();
-    setS(load());
-  }
-
-  const myMatches = s.matches.filter(
-    (m) => m.pairA.includes(me.id) || m.pairB.includes(me.id)
-  );
 
   return (
     <div style={{ padding: 20 }}>
-      <h2>Dashboard</h2>
+      <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+        <h2 style={{ margin: 0 }}>Dashboard</h2>
+        <div style={{ flex: 1 }} />
+        <button
+          onClick={() => {
+            signOut();
+            location.href = "#/";
+          }}
+        >
+          Sign out
+        </button>
+      </div>
 
       <p>
-        Status: <b>{me.status}</b>
+        <b>{me.name}</b> · {me.email}
+        <br />
+        League: <b>{me.leagueType}</b> · Status: <b>{me.status}</b>
       </p>
 
-      {me.status === "waiting_for_pair" && (
-        <>
-          <p>You’re in the waiting pool.</p>
-          <button onClick={runPairing}>Run auto-pairing</button>
-        </>
-      )}
-
-      {me.status === "waiting_for_partner" && (
-        <p>Waiting for your partner to accept the invite.</p>
+      {!myPair && me.leagueType === "friendly" && me.status === "waiting_for_pair" && (
+        <div style={card}>
+          <h3 style={{ marginTop: 0 }}>Waiting pool</h3>
+          <p style={{ color: "#444" }}>
+            You’re in the Friendly solo pool. Click to run auto-pairing (simulates the nightly job).
+          </p>
+          <button
+            onClick={() => {
+              tryAutoPairFriendly();
+              setRefresh((x) => x + 1);
+            }}
+          >
+            Run auto-pairing now
+          </button>
+        </div>
       )}
 
       {myInvites.length > 0 && (
-        <>
-          <h3>Invites</h3>
+        <div style={card}>
+          <h3 style={{ marginTop: 0 }}>Invites for you</h3>
           {myInvites.map((i) => (
-            <div key={i.code}>
-              Invite code: <b>{i.code}</b>
-              <button onClick={() => accept(i.code)}>Accept</button>
+            <div key={i.code} style={{ display: "flex", gap: 10, alignItems: "center", marginBottom: 8 }}>
+              <div>
+                Invite code: <b>{i.code}</b>
+              </div>
+              <button
+                onClick={() => {
+                  try {
+                    acceptInvite({ code: i.code, accepterUserId: me.id });
+                    setRefresh((x) => x + 1);
+                  } catch (e) {
+                    alert(e.message);
+                  }
+                }}
+              >
+                Accept
+              </button>
             </div>
           ))}
-        </>
+        </div>
       )}
 
-      {me.pairId && (
-        <>
-          <h3>Your matches</h3>
+      {myPair ? (
+        <div style={card}>
+          <h3 style={{ marginTop: 0 }}>Your pair</h3>
+          <div>Pair ID: <b>{myPair.id}</b></div>
+          <div>Captain: <b>{myPair.captainUserId === me.id ? "You" : "Partner"}</b></div>
 
-          <button onClick={genFixtures}>
+          <hr style={{ margin: "14px 0" }} />
+
+          <h3 style={{ marginTop: 0 }}>Matches</h3>
+          <button
+            onClick={() => {
+              generateWeeklyFixtures({ weekIndex: currentWeekIndex(s.season.starts) });
+              setRefresh((x) => x + 1);
+            }}
+          >
             Generate this week’s fixtures
           </button>
 
-          {myMatches.length === 0 && <p>No matches yet.</p>}
-
-          {myMatches.map((m) => (
-            <div
-              key={m.id}
-              style={{
-                border: "1px solid #ddd",
-                borderRadius: 8,
-                padding: 10,
-                marginTop: 10
-              }}
-            >
-              <div>
-                <b>{m.week}</b>
-              </div>
-              <div>
-                Pair A vs Pair B
-              </div>
-              <Link to={`/match/${m.id}`}>Open match</Link>
-            </div>
-          ))}
-        </>
+          {myMatches.length === 0 ? (
+            <p style={{ color: "#666" }}>No matches yet.</p>
+          ) : (
+            <ul>
+              {myMatches.map((m) => (
+                <li key={m.id}>
+                  Week {m.weekIndex + 1} — <b>{m.status}</b> —{" "}
+                  <Link to={`/match/${m.id}`}>Open match</Link>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      ) : (
+        <div style={card}>
+          <h3 style={{ marginTop: 0 }}>Not paired yet</h3>
+          <p style={{ margin: 0, color: "#444" }}>
+            Complete Profile → Partner setup to get paired.
+          </p>
+          <p style={{ marginBottom: 0 }}>
+            <Link to="/profile">Go to Profile</Link>
+          </p>
+        </div>
       )}
     </div>
   );
 }
+
+const card = { border: "1px solid #ddd", borderRadius: 12, padding: 14, marginTop: 14 };
