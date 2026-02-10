@@ -18,6 +18,8 @@ export default function Partner() {
   }
 
   async function sendInvite() {
+    console.log("SEND INVITE CLICKED", email);
+
     const toEmail = email.trim();
     if (!toEmail) return alert("Enter partner email");
 
