@@ -7,6 +7,8 @@ export default function Partner() {
   const navigate = useNavigate();
   const [email, setEmail] = useState("");
 
+  if (!me) return <div style={{ padding: 20 }}>No session. Go Home.</div>;
+
   const isFriendly = me.leagueType === "friendly";
 
   function joinSoloFriendly() {
@@ -16,10 +18,8 @@ export default function Partner() {
 
   function sendInvite() {
     if (!email.trim()) return alert("Enter partner email");
-
     const inv = createInvite({ createdByUserId: me.id, partnerEmail: email.trim() });
     updateUser(me.id, { status: "waiting_for_partner" });
-
     alert(`Invite code (share this with your partner): ${inv.code}`);
     navigate("/dashboard");
   }
@@ -30,42 +30,21 @@ export default function Partner() {
 
       {isFriendly ? (
         <>
-          <p style={{ color: "#444" }}>
-            Friendly allows solo signup (we’ll auto-pair you) or you can invite a partner.
-          </p>
+          <p style={{ color: "#444" }}>Friendly allows solo signup or invite a partner.</p>
 
-          <button style={btn} onClick={joinSoloFriendly}>
-            Join solo (auto-pair me)
-          </button>
+          <button style={btn} onClick={joinSoloFriendly}>Join solo (auto-pair me)</button>
 
           <hr style={{ margin: "14px 0" }} />
 
           <div style={{ fontWeight: 800, marginBottom: 8 }}>Invite a partner</div>
-          <input
-            style={inp}
-            placeholder="partner@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <button style={{ ...btn, marginTop: 10 }} onClick={sendInvite}>
-            Create invite
-          </button>
+          <input style={inp} placeholder="partner@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <button style={{ ...btn, marginTop: 10 }} onClick={sendInvite}>Create invite</button>
         </>
       ) : (
         <>
-          <p style={{ color: "#444" }}>
-            Competitive requires a fixed partner.
-          </p>
-
-          <input
-            style={inp}
-            placeholder="partner@email.com"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-          />
-          <button style={{ ...btn, marginTop: 10 }} onClick={sendInvite}>
-            Create invite
-          </button>
+          <p style={{ color: "#444" }}>Competitive requires a fixed partner.</p>
+          <input style={inp} placeholder="partner@email.com" value={email} onChange={(e) => setEmail(e.target.value)} />
+          <button style={{ ...btn, marginTop: 10 }} onClick={sendInvite}>Create invite</button>
         </>
       )}
     </div>
